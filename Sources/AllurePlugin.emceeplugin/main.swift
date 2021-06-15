@@ -126,7 +126,7 @@ class Stream: DefaultBusListener {
     override func runnerEvent(_ event: RunnerEvent) {
         switch event {
         case .didRun( _ , let testContext):
-            let path = testContext.environment["XCRESULT_PATH"] ?? ""
+            let path = testContext.environment["EMCEE_XCRESULT_PATH"] ?? ""
             let allureRunId = testContext.environment["allureRunId"] ?? ""
             let allureToken = testContext.environment["allureToken"] ?? ""
             let allureHost = testContext.environment["allureHost"] ?? ""

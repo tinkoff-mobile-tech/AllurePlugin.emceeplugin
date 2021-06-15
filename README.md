@@ -8,7 +8,7 @@ Plugin setup documentation is [here](https://github.com/avito-tech/Emcee/wiki/Pl
 
 ```json
 "environment": {
-	"XCRESULT_PATH": "path to .xcresult",
+	"EMCEE_XCRESULT_PATH": "path to .xcresult",
      	"allureRunId": "allure run id to download results of test run",
      	"allureToken": "token for auth in allure",
      	"allureHost": "host of your allure server"

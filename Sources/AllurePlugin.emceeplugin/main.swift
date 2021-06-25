@@ -7,17 +7,31 @@ import FileSystem
 
 let uuid = UUID()
 
-func sendAllureReport(xcresultPath: String, runId: String, token: String, host: String) {
+func sendAllureReport(xcresultPath: String,
+                      runId: String,
+                      token: String,
+                      host: String,
+                      mobileToolsUrl: String,
+                      xcresultParserPath: String,
+                      xcresultParserBuildPath: String,
+                      repoName: String,
+                      durationServiceUrl: String) {
     let resultPath = FileManager.default.temporaryDirectory.path
     xcresultConvert(path: xcresultPath, resultPath: resultPath)
     let _ = RequestSender().sendRequest(token: token,
                                         fileURL: URL(fileURLWithPath: resultPath + "/result_\(uuid).zip"),
                                         requestUrl: URL(string: "https://\(host)/api/rs/launch/\(runId)/upload")!)
+    sendResult(mobileToolsUrl: mobileToolsUrl,
+               xcresultParserPath: xcresultParserPath,
+               xcresultParserBuildPath: xcresultParserBuildPath,
+               xcresultPath: xcresultPath,
+               repoName: repoName,
+               durationServiceUrl: durationServiceUrl)
     deleteResult(resultPath: resultPath)
 }
 
 func xcresultConvert(path: String, resultPath: String) {
-    print("creating result_\(uuid).zip")
+    print("creating result_\(uuid).zip in \(resultPath)")
     shell("mkdir -p \(resultPath)/result_\(uuid)")
     shell("xcresults export \(path) \(resultPath)/result_\(uuid)")
     shell("cd \(resultPath) \n zip -r result_\(uuid).zip \(resultPath)/result_\(uuid)")
@@ -28,7 +42,24 @@ func deleteResult(resultPath: String) {
     shell("cd \(resultPath) \n rm -rf result_\(uuid) \n rm result_\(uuid).zip")
 }
 
-func shell(_ command: String){
+func sendResult(mobileToolsUrl: String,
+                xcresultParserPath: String,
+                xcresultParserBuildPath: String,
+                xcresultPath: String,
+                repoName: String,
+                durationServiceUrl: String) {
+    print("send result to duration service")
+    shell("rm -rf mobileautomation")
+    shell("git clone \(mobileToolsUrl)")
+    shell("cd \(xcresultParserPath) \n swift build")
+    let json = shell("\(xcresultParserPath)/\(xcresultParserBuildPath) resultinfo \(xcresultPath) \(repoName)")
+    _ = RequestSender().sendTestDuration(url: URL(string: durationServiceUrl)!,
+                                         data: json)
+    print("result sended")
+}
+
+@discardableResult
+func shell(_ command: String) -> String {
     let task = Process()
     let pipe = Pipe()
     
@@ -40,7 +71,9 @@ func shell(_ command: String){
     task.launch()
     
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    print(String(data: data, encoding: .utf8)!)
+    let outputData = String(data: data, encoding: .utf8)!
+    print(outputData)
+    return outputData
 }
 
 private func createToken(_ authData: Dictionary<String, Any>?) -> String {
@@ -58,6 +91,18 @@ class RequestSender: NSObject {
         request.httpMethod = "POST"
         request.addValue(token, forHTTPHeaderField: "authorization")
         request.prepareSendXcresultBody(fileURL: fileURL)
+        return sendRequest(request: request)
+    }
+    
+    fileprivate func sendTestDuration(url: URL,
+                                      data: String) -> Dictionary<String, Any>? {
+        var request = URLRequest(url: url,
+                                 cachePolicy: .reloadIgnoringLocalCacheData)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        var body = Data()
+        body.append(data)
+        request.httpBody = body
         return sendRequest(request: request)
     }
     
@@ -130,7 +175,20 @@ class Stream: DefaultBusListener {
             let allureRunId = testContext.environment["allureRunId"] ?? ""
             let allureToken = testContext.environment["allureToken"] ?? ""
             let allureHost = testContext.environment["allureHost"] ?? ""
-            sendAllureReport(xcresultPath: path, runId: allureRunId, token: allureToken, host: allureHost)
+            let mobileToolsUrl = testContext.environment["mobileToolsUrl"] ?? ""
+            let xcresultParserPath = testContext.environment["xcresultParcerPath"] ?? ""
+            let xcresultParserBuildPath = testContext.environment["xcresultParserBuildPath"] ?? ""
+            let repoName = testContext.environment["repoName"] ?? ""
+            let durationServiceUrl = testContext.environment["durationServiceUrl"] ?? ""
+            sendAllureReport(xcresultPath: path,
+                             runId: allureRunId,
+                             token: allureToken,
+                             host: allureHost,
+                             mobileToolsUrl: mobileToolsUrl,
+                             xcresultParserPath: xcresultParserPath,
+                             xcresultParserBuildPath: xcresultParserBuildPath,
+                             repoName: repoName,
+                             durationServiceUrl: durationServiceUrl)
             break
         default:
             print("other action: \(event)")

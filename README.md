@@ -8,9 +8,13 @@ Plugin setup documentation is [here](https://github.com/avito-tech/Emcee/wiki/Pl
 
 ```json
 "environment": {
-	"EMCEE_XCRESULT_PATH": "path to .xcresult",
-     	"allureRunId": "allure run id to download results of test run",
-     	"allureToken": "token for auth in allure",
-     	"allureHost": "host of your allure server"
+    "allureRunId": "allure run id to download results of test run",
+    "allureToken": "token for auth in allure",
+    "allureHost": "host of your allure server",
+    "mobileToolsUrl": "url of git repository with additional projects",
+    "xcresultParserPath": "path to the parser that prepares json for sending to the service for calculating the duration of tests",
+    "xcresultParserBuildPath": "path to the parser binary file",
+    "repoName": "unique name of the project repository",
+    "durationServiceUrl": "url of service for calculating the duration of tests"
 }
 ```

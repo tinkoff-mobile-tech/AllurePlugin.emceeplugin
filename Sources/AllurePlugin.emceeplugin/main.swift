@@ -176,7 +176,7 @@ class Stream: DefaultBusListener {
             let allureToken = testContext.environment["allureToken"] ?? ""
             let allureHost = testContext.environment["allureHost"] ?? ""
             let mobileToolsUrl = testContext.environment["mobileToolsUrl"] ?? ""
-            let xcresultParserPath = testContext.environment["xcresultParcerPath"] ?? ""
+            let xcresultParserPath = testContext.environment["xcresultParserPath"] ?? ""
             let xcresultParserBuildPath = testContext.environment["xcresultParserBuildPath"] ?? ""
             let repoName = testContext.environment["repoName"] ?? ""
             let durationServiceUrl = testContext.environment["durationServiceUrl"] ?? ""

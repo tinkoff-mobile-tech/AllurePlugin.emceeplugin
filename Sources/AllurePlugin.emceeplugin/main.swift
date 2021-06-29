@@ -21,7 +21,8 @@ func sendAllureReport(xcresultPath: String,
     let _ = RequestSender().sendRequest(token: token,
                                         fileURL: URL(fileURLWithPath: resultPath + "/result_\(uuid).zip"),
                                         requestUrl: URL(string: "https://\(host)/api/rs/launch/\(runId)/upload")!)
-    sendResult(mobileToolsUrl: mobileToolsUrl,
+    sendResult(resultPath: resultPath,
+               mobileToolsUrl: mobileToolsUrl,
                xcresultParserPath: xcresultParserPath,
                xcresultParserBuildPath: xcresultParserBuildPath,
                xcresultPath: xcresultPath,
@@ -39,20 +40,21 @@ func xcresultConvert(path: String, resultPath: String) {
 
 func deleteResult(resultPath: String) {
     print("deleting result_\(uuid).zip")
-    shell("cd \(resultPath) \n rm -rf result_\(uuid) \n rm result_\(uuid).zip")
+    shell("cd \(resultPath) \n rm -rf result_\(uuid) \n rm result_\(uuid).zip \n rm -rf \(uuid)")
 }
 
-func sendResult(mobileToolsUrl: String,
+func sendResult(resultPath: String,
+                mobileToolsUrl: String,
                 xcresultParserPath: String,
                 xcresultParserBuildPath: String,
                 xcresultPath: String,
                 repoName: String,
                 durationServiceUrl: String) {
     print("send result to duration service")
-    shell("rm -rf mobileautomation")
-    shell("git clone \(mobileToolsUrl)")
-    shell("cd \(xcresultParserPath) \n swift build")
-    let json = shell("\(xcresultParserPath)/\(xcresultParserBuildPath) resultinfo \(xcresultPath) \(repoName)")
+    shell("cd \(resultPath) \n mkdir \(uuid) \n cd \(uuid) \n rm -rf mobileautomation \n git clone \(mobileToolsUrl)")
+    shell("cd \(resultPath)/\(uuid)/\(xcresultParserPath) \n pwd \n swift build")
+    
+    let json = shell("\(resultPath)/\(uuid)/\(xcresultParserPath)/\(xcresultParserBuildPath) resultinfo \(xcresultPath) \(repoName)")
     _ = RequestSender().sendTestDuration(url: URL(string: durationServiceUrl)!,
                                          data: json)
     print("result sended")
@@ -103,6 +105,7 @@ class RequestSender: NSObject {
         var body = Data()
         body.append(data)
         request.httpBody = body
+        print(request)
         return sendRequest(request: request)
     }
     
@@ -176,7 +179,7 @@ class Stream: DefaultBusListener {
             let allureToken = testContext.environment["allureToken"] ?? ""
             let allureHost = testContext.environment["allureHost"] ?? ""
             let mobileToolsUrl = testContext.environment["mobileToolsUrl"] ?? ""
-            let xcresultParserPath = testContext.environment["xcresultParcerPath"] ?? ""
+            let xcresultParserPath = testContext.environment["xcresultParserPath"] ?? ""
             let xcresultParserBuildPath = testContext.environment["xcresultParserBuildPath"] ?? ""
             let repoName = testContext.environment["repoName"] ?? ""
             let durationServiceUrl = testContext.environment["durationServiceUrl"] ?? ""

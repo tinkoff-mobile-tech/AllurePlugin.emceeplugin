@@ -18,9 +18,8 @@ func sendAllureReport(xcresultPath: String,
                       durationServiceUrl: String) {
     let resultPath = FileManager.default.temporaryDirectory.path
     xcresultConvert(path: xcresultPath, resultPath: resultPath)
-    let _ = RequestSender().sendRequest(token: token,
-                                        fileURL: URL(fileURLWithPath: resultPath + "/result_\(uuid).zip"),
-                                        requestUrl: URL(string: "https://\(host)/api/rs/launch/\(runId)/upload")!)
+    shell("allurectl auth login -e '\(host)' -t '\(token)'")
+    shell("cd \(resultPath) \n allurectl upload result_\(uuid) --launch-id \(runId)")
     sendResult(resultPath: resultPath,
                mobileToolsUrl: mobileToolsUrl,
                xcresultParserPath: xcresultParserPath,
@@ -35,12 +34,11 @@ func xcresultConvert(path: String, resultPath: String) {
     print("creating result_\(uuid).zip in \(resultPath)")
     shell("mkdir -p \(resultPath)/result_\(uuid)")
     shell("xcresults export \(path) \(resultPath)/result_\(uuid)")
-    shell("cd \(resultPath) \n zip -r result_\(uuid).zip \(resultPath)/result_\(uuid)")
 }
 
 func deleteResult(resultPath: String) {
     print("deleting result_\(uuid).zip")
-    shell("cd \(resultPath) \n rm -rf result_\(uuid) \n rm result_\(uuid).zip \n rm -rf \(uuid)")
+    shell("cd \(resultPath) \n rm -rf result_\(uuid)")
 }
 
 func sendResult(resultPath: String,
@@ -85,16 +83,6 @@ private func createToken(_ authData: Dictionary<String, Any>?) -> String {
 }
 
 class RequestSender: NSObject {
-    fileprivate func sendRequest(token: String,
-                                 fileURL: URL,
-                                 requestUrl: URL) -> Dictionary<String, Any>? {
-        var request = URLRequest(url: requestUrl,
-                                 cachePolicy: .reloadIgnoringLocalCacheData)
-        request.httpMethod = "POST"
-        request.addValue(token, forHTTPHeaderField: "authorization")
-        request.prepareSendXcresultBody(fileURL: fileURL)
-        return sendRequest(request: request)
-    }
     
     fileprivate func sendTestDuration(url: URL,
                                       data: String) -> Dictionary<String, Any>? {
@@ -139,33 +127,6 @@ extension Data {
         if let data = string.data(using: .utf8) {
             append(data)
         }
-    }
-    
-    mutating func prepareElement(name: String, filename: String, contentType: String, filePath: URL) {
-        let lineBreak = "\r\n"
-        
-        self.append("Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(filename)\"\(lineBreak)")
-        self.append("Content-Type: application/\(contentType)\(lineBreak + lineBreak)")
-        do {
-            let info = try Data(contentsOf: filePath)
-            self.append(info)
-        } catch {}
-        self.append(lineBreak)
-    }
-}
-
-private extension URLRequest {
-    mutating func prepareSendXcresultBody(fileURL: URL) {
-        let boundary = "--------------------------062242191841608437752799"
-        self.addValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        var body = Data()
-        
-        let lineBreak = "\r\n"
-        body.append("--" + boundary + lineBreak)
-        body.prepareElement(name: "archive", filename: "result_\(uuid).zip", contentType: "zip", filePath: fileURL)
-        body.append("--\(boundary)--")
-        body.append(lineBreak)
-        self.httpBody = body
     }
 }
 

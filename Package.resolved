@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/avito-tech/CommandLineToolkit.git",
         "state": {
           "branch": null,
-          "revision": "95d7af1ccaacd2904def3d261a749905f90d3796",
-          "version": null
+          "revision": "63af332c08a82037b4be61415f533ebe519783b7",
+          "version": "1.0.4"
         }
       },
       {
@@ -41,8 +41,8 @@
         "package": "EmceeTestRunner",
         "repositoryURL": "https://github.com/avito-tech/Emcee",
         "state": {
-          "branch": "12.0.0",
-          "revision": "2d07ee2ae60753f7c094a5215792671d890f4e07",
+          "branch": "14.0.0",
+          "revision": "fb51a5fcb1a13cce43358506893c905be45d284c",
           "version": null
         }
       },
